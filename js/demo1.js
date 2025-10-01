@@ -3,6 +3,8 @@ const s = (p) => {
   let currentTrackIndex = 0;
   let isPlaying = false;
   let currentVolume = 1;
+  let toggleIdleTimer;
+  let panelIdleTimer;
 
   const album = [
     {
@@ -11,15 +13,13 @@ const s = (p) => {
       audioPath: 'audio/demo1.mp3',
       imgPath: 'img/1.jpg',
       shaderPath: 'shaders/d1.frag',
-      lyrics: "Lyrics for Blue Hour Static..."
     },
     {
       artist: 'Dxginger',
       title: 'The Quiet Hum',
       audioPath: 'audio/demo2.mp3',
       imgPath: 'img/2.jpg',
-      shaderPath: 'shaders/d1.frag',
-      lyrics: "Lyrics for The Quiet Hum..."
+      shaderPath: 'shaders/d2.frag',
     },
     {
         artist: 'Dxginger',
@@ -27,16 +27,14 @@ const s = (p) => {
         audioPath: 'audio/demo3.mp3',
         imgPath: 'img/3.jpg',
         shaderPath: 'shaders/displacement.frag', 
-        displacementMapPath: 'img/noise.jpg',
-        lyrics: "Lyrics for 4 AM Echo..."
+        displacementMapPath: 'img/ripple.jpg',
     },
     {
       artist: 'Dxginger',
       title: 'Weightless Drift',
       audioPath: 'audio/demo4.mp3',
       imgPath: 'img/4.jpg',
-      shaderPath: 'shaders/d3.frag',
-      lyrics: "Lyrics for Weightless Drift..."
+      shaderPath: 'shaders/d4.frag',
     },
     {
       artist: 'Dxginger',
@@ -44,7 +42,6 @@ const s = (p) => {
       audioPath: 'audio/demo5.mp3',
       imgPath: 'img/5.jpg',
       shaderPath: 'shaders/pixelation.frag',
-      lyrics: "Lyrics for Phantom Vibration..."
     },
     {
       artist: 'Dxginger',
@@ -52,7 +49,6 @@ const s = (p) => {
       audioPath: 'audio/demo6.mp3',
       imgPath: 'img/6.jpg',
       shaderPath: 'shaders/d6.frag',
-      lyrics: "Lyrics for Counting the Seconds..."
     },
     {
       artist: 'Dxginger',
@@ -60,7 +56,6 @@ const s = (p) => {
       audioPath: 'audio/demo7.mp3',
       imgPath: 'img/7.jpg',
       shaderPath: 'shaders/d8.frag',
-      lyrics: "Lyrics for Synthetic Dawn..."
     },
     {
       artist: 'Dxginger',
@@ -68,7 +63,6 @@ const s = (p) => {
       audioPath: 'audio/demo8.mp3',
       imgPath: 'img/8.jpg',
       shaderPath: 'shaders/d1.frag',
-      lyrics: "Lyrics for Silk & Silicone..."
     },
     {
       artist: 'Dxginger',
@@ -76,7 +70,6 @@ const s = (p) => {
       audioPath: 'audio/demo9.mp3',
       imgPath: 'img/9.jpg',
       shaderPath: 'shaders/d2.frag',
-      lyrics: "Lyrics for Glimmering Loop..."
     },
     {
       artist: 'Dxginger',
@@ -84,7 +77,6 @@ const s = (p) => {
       audioPath: 'audio/demo10.mp3',
       imgPath: 'img/10.jpg',
       shaderPath: 'shaders/d3.frag',
-      lyrics: "Lyrics for The Unmade Bed..."
     },
     {
       artist: 'Dxginger',
@@ -92,7 +84,6 @@ const s = (p) => {
       audioPath: 'audio/demo11.mp3',
       imgPath: 'img/11.jpg',
       shaderPath: 'shaders/noise.frag',
-      lyrics: "Lyrics for Subtle Decay..."
     },
     {
       artist: 'Dxginger',
@@ -100,7 +91,6 @@ const s = (p) => {
       audioPath: 'audio/demo12.mp3',
       imgPath: 'img/12.jpg',
       shaderPath: 'shaders/d5.frag',
-      lyrics: "Lyrics for Lucid Fade..."
     }
   ];
 
@@ -134,7 +124,6 @@ const s = (p) => {
   function updateTrackInfo() {
       document.getElementById('track-artist').textContent = `Now Playing`;
       document.getElementById('track-title').textContent = album[currentTrackIndex].title;
-      document.getElementById('track-lyrics').textContent = album[currentTrackIndex].lyrics;
       document.body.style.backgroundImage = `url(${album[currentTrackIndex].imgPath})`;
 
       const tracklistItems = document.querySelectorAll('.track-item');
@@ -147,6 +136,7 @@ const s = (p) => {
       });
   }
   
+
   function playTrack(index) {
     if (index < 0 || index >= album.length) return;
     
@@ -241,20 +231,26 @@ const s = (p) => {
       playBtn.addEventListener('click', () => {
         document.body.classList.add('start-anim');
         togglePlayPause();
+        
+        const animTimeTotal = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--anim-time-total').replace('s', '')) * 1000;
+        
+        setTimeout(() => {
+            document.body.classList.add('main-view-active');
+            resetToggleIdleTimer(); 
+        }, animTimeTotal);
+
       });
 
       p.pixelDensity(1);
-      p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
+      const canvas = p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
+      canvas.parent('content'); 
       p.shader(demo1Shader);
       
       document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
-
       document.getElementById('toggle-btn').addEventListener('click', toggleMute);
-      
       document.getElementById('next-btn').addEventListener('click', () => {
           playTrack((currentTrackIndex + 1) % album.length);
       });
-
       document.getElementById('prev-btn').addEventListener('click', () => {
           playTrack((currentTrackIndex - 1 + album.length) % album.length);
       });
@@ -287,18 +283,60 @@ const s = (p) => {
       const closeModalBtn = aboutModal.querySelector('.modal-close');
       const modalOverlay = aboutModal.querySelector('.modal-overlay');
 
-      aboutBtn.addEventListener('click', () => {
-          aboutModal.classList.add('visible');
+      aboutBtn.addEventListener('click', () => aboutModal.classList.add('visible'));
+      closeModalBtn.addEventListener('click', () => aboutModal.classList.remove('visible'));
+      modalOverlay.addEventListener('click', () => aboutModal.classList.remove('visible'));
+
+      const playerWrapper = document.querySelector('.player-container');
+      const tracklistWrapper = document.querySelector('.tracklist-wrapper');
+      const playerToggle = document.querySelector('.player-toggle');
+      const tracklistToggle = document.querySelector('.tracklist-toggle');
+
+      const resetToggleIdleTimer = () => {
+        clearTimeout(toggleIdleTimer);
+        playerToggle.classList.remove('idle-fade');
+        tracklistToggle.classList.remove('idle-fade');
+        toggleIdleTimer = setTimeout(() => {
+          playerToggle.classList.add('idle-fade');
+          tracklistToggle.classList.add('idle-fade');
+        }, 3000); 
+      };
+      
+      if(document.body.classList.contains('main-view-active')){
+        window.addEventListener('mousemove', resetToggleIdleTimer);
+      }
+      
+      const startPanelIdleTimer = () => {
+          clearTimeout(panelIdleTimer);
+          panelIdleTimer = setTimeout(() => {
+              playerWrapper.classList.remove('is-active');
+              tracklistWrapper.classList.remove('is-active');
+          }, 8000); 
+      };
+      
+      playerWrapper.addEventListener('mouseenter', () => {
+          playerWrapper.classList.add('is-active');
+          startPanelIdleTimer();
+      });
+      playerWrapper.addEventListener('mouseleave', () => {
+          playerWrapper.classList.remove('is-active');
+          clearTimeout(panelIdleTimer);
       });
 
-      closeModalBtn.addEventListener('click', () => {
-          aboutModal.classList.remove('visible');
+      tracklistWrapper.addEventListener('mouseenter', () => {
+          tracklistWrapper.classList.add('is-active');
+          startPanelIdleTimer();
+      });
+       tracklistWrapper.addEventListener('mouseleave', () => {
+          tracklistWrapper.classList.remove('is-active');
+          clearTimeout(panelIdleTimer);
       });
 
-      modalOverlay.addEventListener('click', () => {
-          aboutModal.classList.remove('visible');
+      window.addEventListener('mousemove', () => {
+          if (playerWrapper.classList.contains('is-active') || tracklistWrapper.classList.contains('is-active')) {
+              startPanelIdleTimer();
+          }
       });
-
 
       fft = new p5.FFT();
   };
@@ -317,17 +355,14 @@ const s = (p) => {
     const currentShader = album[currentTrackIndex].shaderPath;
 
     if (currentShader === 'shaders/pixelation.frag') {
-        // Settings for Pixelation Pulse
         mapBass = p.map(bass, 0, 255, 20.0, 200.0);
         mapTremble = p.map(treble, 0, 255, 0, 0.0);
         mapMid = p.map(mid, 0, 255, 0.0, 0.1);
     } else if (currentShader === 'shaders/noise.frag' || currentShader === 'shaders/displacement.frag') {
-        // Settings for Noise and Displacement
         mapBass = p.map(bass, 0, 255, 10, 15.0);
         mapTremble = p.map(treble, 0, 255, 0, 0.0);
         mapMid = p.map(mid, 0, 255, 0.0, 0.4);
     } else {
-        // Default settings for original shaders
         mapBass = p.map(bass, 0, 255, 10, 15.0);
         mapTremble = p.map(treble, 0, 255, 0, 0.0);
         mapMid = p.map(mid, 0, 255, 0.0, 0.1);

@@ -10,24 +10,24 @@
 		<link rel="shortcut icon" href="favicon.ico">
 		<link rel="stylesheet" type="text/css" href="css/base.css" />
 		<link rel="stylesheet" type="text/css" href="css/demo1.css" />
-		<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
 		<script>document.documentElement.className="js";var supportsCssVars=function(){var e,t=document.createElement("style");return t.innerHTML="root: { --tmp-var: bold; }",document.head.appendChild(t),e=!!(window.CSS&&window.CSS.supports&&window.CSS.supports("font-weight","var(--tmp-var)")),t.parentNode.removeChild(t),e};supportsCssVars()||alert("Please view this demo in a modern browser that supports CSS Variables.");</script>
 		
 	</head>
 	<body>
-		<main>
+		<main id="content">
 			<div class="frame">
-				<h1 class="frame__title">Dxginger - Insomnia</h1>
-				<button class="button" id="about-btn">About Album</button>
+                <div class="frame__top">
+                    <h1 class="frame__title">Dxginger - Insomnia</h1>
+                    <button id="about-btn">About Album</button>
+                </div>
 			</div>
-			<div class="content">
-				<h3 class="content__subtitle" id="track-artist"></h3>
-				<h2 class="content__title" id="track-title"></h2>
-				<div class="content__credits" id="track-lyrics"></div>
-			</div>
-			<div id="tracklist-container">
-				<ul id="tracklist"></ul>
-			</div>
+            
+            <div class="track-info">
+                <h3 class="track-info__artist" id="track-artist"></h3>
+                <h2 class="track-info__title" id="track-title"></h2>
+            </div>
+
 			<div class="screen screen--grid intro">
 				<p class="intro__content">
 					<span class="intro__content-line">DXGINGER</span>
@@ -42,23 +42,43 @@
 				<span class="action__line">Turn your sound on</span>
 				<button id="play-btn" class="button button--box">Play</button>
 			</div>
-			<div id="player-controls">
-				<button class="button player-btn" id="prev-btn" title="Previous Track"><span class="material-symbols-outlined">skip_previous</span></button>
-				<button class="button player-btn" id="play-pause-btn" title="Play/Pause"><span class="material-symbols-outlined">play_arrow</span></button>
-				<button class="button player-btn" id="next-btn" title="Next Track"><span class="material-symbols-outlined">skip_next</span></button>
-				<button class="button player-btn" id="toggle-btn" title="Mute"><span class="material-symbols-outlined">volume_up</span></button>
-				<input type="range" id="volume-slider" min="0" max="1" step="0.01" value="1" title="Volume">
-				<button class="button player-btn" id="fullscreen-btn" title="Fullscreen"><span class="material-symbols-outlined">fullscreen</span></button>
-			</div>
-			<div id="about-modal" class="modal">
-				<div class="modal-overlay"></div>
-				<div class="modal-content">
-					<button class="modal-close">&times;</button>
-					<h2>About Insomnia</h2>
-					<p>"Insomnia" is an auditory journey through the sleepless hours, a soundscape painted with the quiet desperation and delicate beauty of the night. Each track is a vignette, a fleeting thought in the dark, exploring themes of isolation, introspection, and the surreal clarity that only comes when the world is asleep.</p>
-				</div>
-			</div>
 		</main>
+
+        <div class="player-container">
+             <div class="player-controls">
+                <button id="prev-btn" class="button"><span class="material-symbols-outlined">skip_previous</span></button>
+                <button id="play-pause-btn" class="button"><span class="material-symbols-outlined">play_arrow</span></button>
+                <button id="next-btn" class="button"><span class="material-symbols-outlined">skip_next</span></button>
+                <div class="volume-control">
+                    <button id="toggle-btn" class="button"><span class="material-symbols-outlined">volume_up</span></button>
+                    <input type="range" id="volume-slider" class="slider" min="0" max="1" step="0.01" value="1">
+                </div>
+                <button id="fullscreen-btn" class="button"><span class="material-symbols-outlined">fullscreen</span></button>
+            </div>
+            <div class="player-toggle">
+                <img src="img/menu-button.svg" alt="Show Player Controls">
+            </div>
+        </div>
+
+        <div class="tracklist-wrapper">
+            <div class="tracklist-toggle">
+                <img src="img/track-list.svg" alt="Show Tracklist">
+            </div>
+            <div class="tracklist-container">
+                <h3>Insomnia</h3>
+                <ul id="tracklist"></ul>
+            </div>
+        </div>
+
+        <div id="about-modal" class="modal">
+            <div class="modal-overlay"></div>
+            <div class="modal-content">
+                <button class="modal-close">&times;</button>
+                <h2>About Insomnia</h2>
+                <p>Shed the heavy cloak of night, The clock's tick is a heavy choke. My mind won't rest, a tangled thread, Chasing silence on an empty bed. I seek the dawn, a sliver bright, But find only the endless night. The promised light is just a ghost, A battle lost before it's most begun. I'm caught in this dark, and cannot flee, From the shadow that is only me.</p>
+            </div>
+        </div>
+
 		<div id="p5_loading" class="p5_loading">
 			<div class="p5_loading__inner"></div>
 		</div>

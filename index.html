@@ -15,6 +15,7 @@
 		
 	</head>
 	<body>
+        <!-- The Main Visualizer container where the p5.js canvas will be injected -->
 		<main id="content">
 			<div class="frame">
                 <div class="frame__top">
@@ -23,11 +24,13 @@
                 </div>
 			</div>
             
+            <!-- Visual & UI Component: Track Info Display -->
             <div class="track-info">
                 <h3 class="track-info__artist" id="track-artist"></h3>
                 <h2 class="track-info__title" id="track-title"></h2>
             </div>
 
+            <!-- Visual & UI Component: Intro Animation -->
 			<div class="screen screen--grid intro">
 				<p class="intro__content">
 					<span class="intro__content-line">DXGINGER</span>
@@ -38,12 +41,14 @@
 					<span class="intro__content-line">Insomnia</span>
 				</p>
 			</div>
+            <!-- Visual & UI Component: Action Screen -->
 			<div class="screen screen--flex action">
 				<span class="action__line">Turn your sound on</span>
 				<button id="play-btn" class="button button--box">Play</button>
 			</div>
 		</main>
 
+        <!-- Visual & UI Component: Player Controls & Player Toggle -->
         <div class="player-container">
              <div class="player-controls">
                 <button id="prev-btn" class="button"><span class="material-symbols-outlined">skip_previous</span></button>
@@ -60,6 +65,7 @@
             </div>
         </div>
 
+        <!-- Visual & UI Component: Tracklist Panel & Tracklist Toggle -->
         <div class="tracklist-wrapper">
             <div class="tracklist-toggle">
                 <img src="img/track-list.svg" alt="Show Tracklist">
@@ -70,6 +76,7 @@
             </div>
         </div>
 
+        <!-- Visual & UI Component: "About Album" Modal -->
         <div id="about-modal" class="modal">
             <div class="modal-overlay"></div>
             <div class="modal-content">

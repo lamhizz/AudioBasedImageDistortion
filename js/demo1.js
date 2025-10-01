@@ -1,4 +1,7 @@
+// --- Code & Logic Component: p5.js Sketch ---
+// This is the main structure that holds the entire visual application logic.
 const s = (p) => {
+  // --- Global variables for the sketch ---
   let demo1Shader, img, fft, audio, displacementMap;
   let currentTrackIndex = 0;
   let isPlaying = false;
@@ -6,6 +9,8 @@ const s = (p) => {
   let toggleIdleTimer;
   let panelIdleTimer;
 
+  // --- Code & Logic Component: `album` Array ---
+  // This array holds the structured data for each track in the album.
   const album = [
     {
       artist: 'Dxginger',
@@ -94,6 +99,8 @@ const s = (p) => {
     }
   ];
 
+  // --- Code & Logic Component: `preload()` function ---
+  // This runs before setup() to load the initial assets for the first track.
   p.preload = () => {
     const track = album[0];
     audio = p.loadSound(track.audioPath);
@@ -104,6 +111,8 @@ const s = (p) => {
     }
   };
 
+  // --- UI Component: Tracklist Panel ---
+  // This function builds the HTML for the tracklist panel from the `album` array.
   function populateTracklist() {
     const tracklistEl = document.getElementById('tracklist');
     tracklistEl.innerHTML = '';
@@ -121,6 +130,8 @@ const s = (p) => {
     });
   }
 
+  // --- UI Component: Track Info Display ---
+  // This function updates the centrally displayed track title and artist.
   function updateTrackInfo() {
       document.getElementById('track-artist').textContent = `Now Playing`;
       document.getElementById('track-title').textContent = album[currentTrackIndex].title;
@@ -136,7 +147,8 @@ const s = (p) => {
       });
   }
   
-
+  // --- Code & Logic Component: `playTrack()` function ---
+  // Handles stopping the old track and loading all new assets for the selected track.
   function playTrack(index) {
     if (index < 0 || index >= album.length) return;
     
@@ -189,10 +201,11 @@ const s = (p) => {
         });
     } else {
         displacementMap = null; // Clear map if not used
-        if(assetsToLoad > 2) assetLoaded(); // Only decrement if it was expected
+        if(assetsToLoad > 2) assetLoaded();
     }
   }
 
+  // --- Helper functions for Player Controls ---
   function togglePlayPause() {
     if (audio && audio.isLoaded()) {
       const playPauseIcon = document.getElementById('play-pause-btn').querySelector('.material-symbols-outlined');
@@ -223,17 +236,20 @@ const s = (p) => {
       }
   }
 
+  // --- Code & Logic Component: `setup()` function ---
+  // This runs once to initialize the canvas, event listeners, and UI components.
   p.setup = () => {
       populateTracklist();
       updateTrackInfo();
       
+      // Event listener for the main "Play" button on the Action Screen
       const playBtn = document.querySelector('#play-btn');
       playBtn.addEventListener('click', () => {
         document.body.classList.add('start-anim');
         togglePlayPause();
         
+        // This class signals that the Intro Animation is over and the main view is active
         const animTimeTotal = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--anim-time-total').replace('s', '')) * 1000;
-        
         setTimeout(() => {
             document.body.classList.add('main-view-active');
             resetToggleIdleTimer(); 
@@ -242,10 +258,12 @@ const s = (p) => {
       });
 
       p.pixelDensity(1);
+      // Main Visualizer is created here and attached to the #content div
       const canvas = p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
       canvas.parent('content'); 
       p.shader(demo1Shader);
       
+      // --- Player Controls Event Listeners ---
       document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
       document.getElementById('toggle-btn').addEventListener('click', toggleMute);
       document.getElementById('next-btn').addEventListener('click', () => {
@@ -278,6 +296,7 @@ const s = (p) => {
           }
       });
       
+      // --- "About Album" Modal Listeners ---
       const aboutBtn = document.getElementById('about-btn');
       const aboutModal = document.getElementById('about-modal');
       const closeModalBtn = aboutModal.querySelector('.modal-close');
@@ -287,11 +306,13 @@ const s = (p) => {
       closeModalBtn.addEventListener('click', () => aboutModal.classList.remove('visible'));
       modalOverlay.addEventListener('click', () => aboutModal.classList.remove('visible'));
 
+      // --- UI Interaction Logic for Hover Panels ---
       const playerWrapper = document.querySelector('.player-container');
       const tracklistWrapper = document.querySelector('.tracklist-wrapper');
       const playerToggle = document.querySelector('.player-toggle');
       const tracklistToggle = document.querySelector('.tracklist-toggle');
 
+      // --- Idle timer for Player/Tracklist Toggles ---
       const resetToggleIdleTimer = () => {
         clearTimeout(toggleIdleTimer);
         playerToggle.classList.remove('idle-fade');
@@ -302,10 +323,12 @@ const s = (p) => {
         }, 3000); 
       };
       
+      // Only start the idle timer once the main view is active
       if(document.body.classList.contains('main-view-active')){
         window.addEventListener('mousemove', resetToggleIdleTimer);
       }
       
+      // --- Auto-hide timer for open panels ---
       const startPanelIdleTimer = () => {
           clearTimeout(panelIdleTimer);
           panelIdleTimer = setTimeout(() => {
@@ -314,6 +337,7 @@ const s = (p) => {
           }, 8000); 
       };
       
+      // --- Player Controls Hover Logic ---
       playerWrapper.addEventListener('mouseenter', () => {
           playerWrapper.classList.add('is-active');
           startPanelIdleTimer();
@@ -323,6 +347,7 @@ const s = (p) => {
           clearTimeout(panelIdleTimer);
       });
 
+      // --- Tracklist Panel Hover Logic ---
       tracklistWrapper.addEventListener('mouseenter', () => {
           tracklistWrapper.classList.add('is-active');
           startPanelIdleTimer();
@@ -332,21 +357,26 @@ const s = (p) => {
           clearTimeout(panelIdleTimer);
       });
 
+      // Reset panel auto-hide timer on any mouse move if a panel is active
       window.addEventListener('mousemove', () => {
           if (playerWrapper.classList.contains('is-active') || tracklistWrapper.classList.contains('is-active')) {
               startPanelIdleTimer();
           }
       });
 
+      // Initialize the Fast Fourier Transform for audio analysis
       fft = new p5.FFT();
   };
 
+  // --- Code & Logic Component: `draw()` Loop ---
+  // This function runs continuously (60fps) to create the animation.
   p.draw = () => {
     if (!demo1Shader || !img || img.width === 0) return;
 
     p.shader(demo1Shader);
     fft.analyze();
 
+    // Get real-time audio frequency data
     const bass = fft.getEnergy("bass");
     const treble = fft.getEnergy("treble");
     const mid = fft.getEnergy("mid");
@@ -354,6 +384,8 @@ const s = (p) => {
     let mapBass, mapTremble, mapMid;
     const currentShader = album[currentTrackIndex].shaderPath;
 
+    // --- Code & Logic Component: Shader-Specific Settings Block ---
+    // Apply specific audio mappings based on the active shader for tailored effects.
     if (currentShader === 'shaders/pixelation.frag') {
         mapBass = p.map(bass, 0, 255, 20.0, 200.0);
         mapTremble = p.map(treble, 0, 255, 0, 0.0);
@@ -363,11 +395,14 @@ const s = (p) => {
         mapTremble = p.map(treble, 0, 255, 0, 0.0);
         mapMid = p.map(mid, 0, 255, 0.0, 0.4);
     } else {
+        // Default settings for original shaders
         mapBass = p.map(bass, 0, 255, 10, 15.0);
         mapTremble = p.map(treble, 0, 255, 0, 0.0);
         mapMid = p.map(mid, 0, 255, 0.0, 0.1);
     }
     
+    // --- Code & Logic Component: Shader Uniforms ---
+    // These variables are sent from JavaScript to the GLSL shader every frame.
     demo1Shader.setUniform('u_resolution', [p.windowWidth, p.windowHeight]);
     demo1Shader.setUniform('u_texture', img);
     demo1Shader.setUniform('u_tResolution', [img.width, img.height]);
@@ -380,9 +415,11 @@ const s = (p) => {
         demo1Shader.setUniform('u_displacementMap', displacementMap);
     }
 
+    // This rectangle covers the whole screen, applying the shader to every pixel.
     p.rect(0,0, p.width, p.height);
   };
 
+  // Handles window resizing to keep the visualizer full-screen
   p.windowResized = () => {
     p.resizeCanvas(p.windowWidth, p.windowHeight);
     if(demo1Shader) {
@@ -391,5 +428,6 @@ const s = (p) => {
   };
 };
 
+// Initialize the p5.js sketch to start the application
 new p5(s);
 

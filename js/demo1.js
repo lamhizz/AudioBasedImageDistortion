@@ -1,5 +1,5 @@
 const s = (p) => {
-  let demo1Shader, img, fft, audio;
+  let demo1Shader, img, fft, audio, displacementMap;
   let currentTrackIndex = 0;
   let isPlaying = false;
   let currentVolume = 1;
@@ -22,19 +22,20 @@ const s = (p) => {
       lyrics: "Lyrics for The Quiet Hum..."
     },
     {
-      artist: 'Dxginger',
-      title: '4 AM Echo',
-      audioPath: 'audio/demo3.mp3',
-      imgPath: 'img/3.jpg',
-      shaderPath: 'shaders/d3.frag',
-      lyrics: "Lyrics for 4 AM Echo..."
+        artist: 'Dxginger',
+        title: '4 AM Echo',
+        audioPath: 'audio/demo3.mp3',
+        imgPath: 'img/3.jpg',
+        shaderPath: 'shaders/displacement.frag', 
+        displacementMapPath: 'img/noise.jpg',
+        lyrics: "Lyrics for 4 AM Echo..."
     },
     {
       artist: 'Dxginger',
       title: 'Weightless Drift',
       audioPath: 'audio/demo4.mp3',
       imgPath: 'img/4.jpg',
-      shaderPath: 'shaders/d5.frag',
+      shaderPath: 'shaders/d3.frag',
       lyrics: "Lyrics for Weightless Drift..."
     },
     {
@@ -42,7 +43,7 @@ const s = (p) => {
       title: 'Phantom Vibration',
       audioPath: 'audio/demo5.mp3',
       imgPath: 'img/5.jpg',
-      shaderPath: 'shaders/d5.frag',
+      shaderPath: 'shaders/pixelation.frag',
       lyrics: "Lyrics for Phantom Vibration..."
     },
     {
@@ -90,7 +91,7 @@ const s = (p) => {
       title: 'Subtle Decay',
       audioPath: 'audio/demo11.mp3',
       imgPath: 'img/11.jpg',
-      shaderPath: 'shaders/d4.frag',
+      shaderPath: 'shaders/noise.frag',
       lyrics: "Lyrics for Subtle Decay..."
     },
     {
@@ -108,6 +109,9 @@ const s = (p) => {
     audio = p.loadSound(track.audioPath);
     img = p.loadImage(track.imgPath);
     demo1Shader = p.loadShader('shaders/base.vert', track.shaderPath);
+    if (track.displacementMapPath) {
+        displacementMap = p.loadImage(track.displacementMapPath);
+    }
   };
 
   function populateTracklist() {
@@ -128,7 +132,7 @@ const s = (p) => {
   }
 
   function updateTrackInfo() {
-      document.getElementById('track-artist').textContent = `Welcome to my`;
+      document.getElementById('track-artist').textContent = `Now Playing`;
       document.getElementById('track-title').textContent = album[currentTrackIndex].title;
       document.getElementById('track-lyrics').textContent = album[currentTrackIndex].lyrics;
       document.body.style.backgroundImage = `url(${album[currentTrackIndex].imgPath})`;
@@ -153,11 +157,7 @@ const s = (p) => {
     currentTrackIndex = index;
     const track = album[currentTrackIndex];
     
-    p.loadImage(track.imgPath, loadedImg => {
-      img = loadedImg;
-      p.loadShader('shaders/base.vert', track.shaderPath, loadedShader => {
-        demo1Shader = loadedShader;
-        p.shader(demo1Shader);
+    const onAssetsLoaded = () => {
         p.loadSound(track.audioPath, loadedSound => {
           audio = loadedSound;
           const volumeSlider = document.getElementById('volume-slider');
@@ -169,8 +169,38 @@ const s = (p) => {
              document.getElementById('play-pause-btn').querySelector('.material-symbols-outlined').textContent = 'pause';
           }
         });
-      });
+    };
+
+    let assetsToLoad = 2; // shader, image
+    if (track.displacementMapPath) assetsToLoad++;
+
+    const assetLoaded = () => {
+        assetsToLoad--;
+        if (assetsToLoad === 0) {
+            onAssetsLoaded();
+        }
+    };
+
+    p.loadImage(track.imgPath, loadedImg => {
+      img = loadedImg;
+      assetLoaded();
     });
+
+    p.loadShader('shaders/base.vert', track.shaderPath, loadedShader => {
+      demo1Shader = loadedShader;
+      p.shader(demo1Shader);
+      assetLoaded();
+    });
+
+    if (track.displacementMapPath) {
+        p.loadImage(track.displacementMapPath, loadedMap => {
+            displacementMap = loadedMap;
+            assetLoaded();
+        });
+    } else {
+        displacementMap = null; // Clear map if not used
+        if(assetsToLoad > 2) assetLoaded(); // Only decrement if it was expected
+    }
   }
 
   function togglePlayPause() {
@@ -283,9 +313,25 @@ const s = (p) => {
     const treble = fft.getEnergy("treble");
     const mid = fft.getEnergy("mid");
 
-    const mapBass = p.map(bass, 0, 255, 10, 15.0);
-    const mapTremble = p.map(treble, 0, 255, 0, 0.0);
-    const mapMid = p.map(mid, 0, 255, 0.0, 0.1);
+    let mapBass, mapTremble, mapMid;
+    const currentShader = album[currentTrackIndex].shaderPath;
+
+    if (currentShader === 'shaders/pixelation.frag') {
+        // Settings for Pixelation Pulse
+        mapBass = p.map(bass, 0, 255, 20.0, 200.0);
+        mapTremble = p.map(treble, 0, 255, 0, 0.0);
+        mapMid = p.map(mid, 0, 255, 0.0, 0.1);
+    } else if (currentShader === 'shaders/noise.frag' || currentShader === 'shaders/displacement.frag') {
+        // Settings for Noise and Displacement
+        mapBass = p.map(bass, 0, 255, 10, 15.0);
+        mapTremble = p.map(treble, 0, 255, 0, 0.0);
+        mapMid = p.map(mid, 0, 255, 0.0, 0.4);
+    } else {
+        // Default settings for original shaders
+        mapBass = p.map(bass, 0, 255, 10, 15.0);
+        mapTremble = p.map(treble, 0, 255, 0, 0.0);
+        mapMid = p.map(mid, 0, 255, 0.0, 0.1);
+    }
     
     demo1Shader.setUniform('u_resolution', [p.windowWidth, p.windowHeight]);
     demo1Shader.setUniform('u_texture', img);
@@ -294,6 +340,10 @@ const s = (p) => {
     demo1Shader.setUniform('u_bass', mapBass);
     demo1Shader.setUniform('u_tremble', mapTremble);
     demo1Shader.setUniform('u_mid', mapMid);
+
+    if (displacementMap) {
+        demo1Shader.setUniform('u_displacementMap', displacementMap);
+    }
 
     p.rect(0,0, p.width, p.height);
   };
@@ -307,3 +357,4 @@ const s = (p) => {
 };
 
 new p5(s);
+

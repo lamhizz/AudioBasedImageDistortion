@@ -26,14 +26,15 @@ void main() {
     vTexCoord.x * ratio.x + (1.0 - ratio.x) * 0.5,
     vTexCoord.y * ratio.y + (1.0 - ratio.y) * 0.5
   );
-
-  uv = 1.0 - uv;
+  
+  // Flip the Y-coordinate to correctly orient the source image
+  uv.y = 1.0 - uv.y;
 
   uv -= vec2(0.5);
   uv = scale(vec2(0.91)) * uv;
   uv += vec2(0.5);
 
-  float wave = sin(((uv.x * 2.0) - 1.0) * u_bass) * u_mid;
+  float wave = sin(((uv.x * 2.0) - 1.0) * (u_bass * 20.0)) * (u_mid * 0.2);
   vec2 d = vec2(wave, 0.001);
 
 
@@ -45,3 +46,4 @@ void main() {
 
   gl_FragColor = color;
 }
+

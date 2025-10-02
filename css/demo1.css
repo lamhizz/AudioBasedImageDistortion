@@ -63,6 +63,7 @@ body {
 }
 
 /* --- Visual & UI Component: Track Info Display --- */
+/* Added a transition for the parallax effect */
 .track-info {
     position: absolute;
     top: 50%;
@@ -72,7 +73,13 @@ body {
     color: #fff;
     text-shadow: 0 2px 10px rgba(0,0,0,0.5);
     width: 100%;
-    z-index: 1500;
+    z-index: 1250; /* Changed z-index to ensure visibility */
+    transition: transform 0.1s ease-out; /* Smooths the parallax movement */
+}
+
+.track-info__artist,
+.track-info__title {
+    transition: transform 0.2s ease-out; /* Smooths the parallax movement for children */
 }
 
 .track-info__artist {
@@ -89,6 +96,40 @@ body {
     font-weight: bold;
     text-transform: uppercase;
 }
+
+/* --- Visual & UI Component: Action Screen --- */
+/* Added animation to the "Turn your sound on" text */
+.action__line {
+    animation: pulseGlow 3s infinite alternate;
+}
+
+@keyframes pulseGlow {
+    from {
+        opacity: 0.6;
+        text-shadow: 0 0 5px rgba(255, 255, 255, 0.2);
+    }
+    to {
+        opacity: 1;
+        text-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
+    }
+}
+
+/* Enhanced hover and active states for the main Play button */
+.button--box {
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
+.button--box:hover {
+    transform: scale(1.05);
+    box-shadow: 0 10px 20px rgba(0,0,0,0.19), 0 6px 6px rgba(0,0,0,0.23);
+}
+
+.button--box:active {
+    transform: scale(0.95);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.24);
+}
+
 
 /* --- Visual & UI Component: Tracklist Panel & Tracklist Toggle --- */
 .tracklist-wrapper {
@@ -111,23 +152,18 @@ body {
     transition: background 0.3s ease, opacity 0.5s ease;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
 }
 
-/* Logic to hide toggles during Intro Animation and show them on Action Screen */
-.start-anim .tracklist-toggle,
-.start-anim .player-toggle {
-    opacity: 0;
-    visibility: hidden;
-    transition-delay: 0s !important;
-}
-
+/* Logic to hide toggles during Intro Animation and show them after */
 .main-view-active .tracklist-toggle,
 .main-view-active .player-toggle {
     opacity: 1;
     visibility: visible;
     pointer-events: auto;
-    transition-delay: 0.5s;
+    transition: opacity 0.5s ease 0.5s, visibility 0.5s ease 0.5s;
 }
+
 
 .tracklist-toggle:hover {
     background: rgba(0, 0, 0, 0.8);
@@ -152,7 +188,7 @@ body {
     overflow-y: auto;
     opacity: 0;
     visibility: hidden;
-    width: 250px;
+    width: 300px;
     transition: opacity 0.4s ease, transform 0.4s ease, visibility 0.4s;
 }
 
@@ -236,6 +272,7 @@ body {
     transition: background 0.3s ease, opacity 0.5s ease;
     opacity: 0;
     visibility: hidden;
+    pointer-events: none;
 }
 
 .player-toggle.idle-fade, .tracklist-toggle.idle-fade {
@@ -354,5 +391,75 @@ body {
     color: #fff;
     font-size: 1.5rem;
     cursor: pointer;
+}
+
+/* --- Visual & UI Component: Secret Shader Debug Panel --- */
+.debug-panel {
+    position: fixed;
+    top: 2rem;
+    left: 2rem;
+    background: rgba(10, 10, 10, 0.9);
+    color: #fff;
+    border-radius: 10px;
+    padding: 1rem;
+    font-family: monospace;
+    z-index: 4000;
+    opacity: 0;
+    visibility: hidden;
+    transform: scale(0.95);
+    transition: opacity 0.3s ease, visibility 0.3s ease, transform 0.3s ease;
+    max-height: 90vh;
+    overflow-y: auto;
+    width: 350px;
+}
+
+.debug-panel.visible {
+    opacity: 1;
+    visibility: visible;
+    transform: scale(1);
+}
+
+.debug-panel-header h3 {
+    margin-top: 0;
+    border-bottom: 1px solid #444;
+    padding-bottom: 0.5rem;
+}
+
+.shader-controls details {
+    border: 1px solid #333;
+    border-radius: 5px;
+    margin-bottom: 0.5rem;
+}
+
+.shader-controls summary {
+    padding: 0.5rem;
+    cursor: pointer;
+    background: #222;
+    outline: none;
+}
+
+.shader-controls-content {
+    padding: 1rem;
+}
+
+.control-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.5rem;
+}
+
+.control-row label {
+    font-size: 0.8rem;
+}
+
+.control-row input[type="range"] {
+    width: 150px;
+}
+
+.control-row span {
+    min-width: 40px;
+    text-align: right;
+    font-size: 0.8rem;
 }
 

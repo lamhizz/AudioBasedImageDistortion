@@ -29,8 +29,6 @@ void main() {
     vTexCoord.y * ratio.y + (1.0 - ratio.y) * 0.5
   );
 
-  uv.y = 1.0 - uv.y;
-
   vec2 uvt = uv;
 
   vec2 translate = vec2(cos(u_mid),sin(u_mid));

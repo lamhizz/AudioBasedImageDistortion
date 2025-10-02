@@ -3,13 +3,17 @@
 #endif
 
 varying vec2 vTexCoord;
-uniform vec2 u_resolution;
+
 uniform sampler2D u_texture;
+uniform vec2 u_resolution;
 uniform vec2 u_tResolution;
-uniform float u_bass; // We'll use bass to control pixel size
+uniform float u_bass; // Mapped from 0.0 to 1.0
+
+// Custom uniforms from the debug panel
+uniform float u_baseSize;
+uniform float u_bassResponse;
 
 void main() {
-  // Adjust texture coordinates to prevent stretching
   vec2 ratio = vec2(
     min((u_resolution.x / u_resolution.y) / (u_tResolution.x / u_tResolution.y), 1.0),
     min((u_resolution.y / u_resolution.x) / (u_tResolution.y / u_tResolution.x), 1.0)
@@ -19,17 +23,15 @@ void main() {
     vTexCoord.x * ratio.x + (1.0 - ratio.x) * 0.5,
     vTexCoord.y * ratio.y + (1.0 - ratio.y) * 0.5
   );
-  
+
+  // Flip the Y-coordinate to correctly orient the source image
   uv.y = 1.0 - uv.y;
 
-  // The 'u_bass' uniform will control the pixel size.
-  // A higher bass value will result in a smaller number (bigger pixels).
-  float pixelSize = u_bass;
+  // The final pixel size is a combination of the base setting and the audio input
+  float pixelSize = u_baseSize + u_bass * u_bassResponse;
   
-  // Quantize the texture coordinates to create the pixelated effect
   vec2 pixelatedUV = floor(uv * pixelSize) / pixelSize;
-  
-  vec4 image = texture2D(u_texture, pixelatedUV);
 
-  gl_FragColor = image;
+  gl_FragColor = texture2D(u_texture, pixelatedUV);
 }
+

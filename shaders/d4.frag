@@ -23,8 +23,6 @@ void main() {
     vTexCoord.y * ratio.y + (1.0 - ratio.y) * 0.5
   );
 
-  uv.y = 1.0 - uv.y;
-
   vec4 texture = texture2D(d_map, uv);
 
   float d = dot(texture.rgb, vec3(u_time));

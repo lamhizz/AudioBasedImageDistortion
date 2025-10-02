@@ -2,7 +2,8 @@
 // This is the main structure that holds the entire visual application logic.
 const s = (p) => {
   // --- Global variables for the sketch ---
-  let demo1Shader, img, fft, audio, displacementMap;
+  let demo1Shader, img, fft, audio, displacementMap, backgroundNoise;
+  let overlayShader, offscreenBuffer; // New variables for the overlay effect
   let currentTrackIndex = 0;
   let isPlaying = false;
   let currentVolume = 1;
@@ -24,7 +25,7 @@ const s = (p) => {
       title: 'The Quiet Hum',
       audioPath: 'audio/demo2.mp3',
       imgPath: 'img/2.jpg',
-      shaderPath: 'shaders/d2.frag',
+      shaderPath: 'shaders/d3.frag',
     },
     {
         artist: 'Dxginger',
@@ -39,14 +40,14 @@ const s = (p) => {
       title: 'Weightless Drift',
       audioPath: 'audio/demo4.mp3',
       imgPath: 'img/4.jpg',
-      shaderPath: 'shaders/d4.frag',
+      shaderPath: 'shaders/d3.frag',
     },
     {
       artist: 'Dxginger',
       title: 'Phantom Vibration',
       audioPath: 'audio/demo5.mp3',
       imgPath: 'img/5.jpg',
-      shaderPath: 'shaders/pixelation.frag',
+      shaderPath: 'shaders/d5.frag',
     },
     {
       artist: 'Dxginger',
@@ -74,14 +75,14 @@ const s = (p) => {
       title: 'Glimmering Loop',
       audioPath: 'audio/demo9.mp3',
       imgPath: 'img/9.jpg',
-      shaderPath: 'shaders/d2.frag',
+      shaderPath: 'shaders/d3.frag',
     },
     {
       artist: 'Dxginger',
       title: 'The Unmade Bed',
       audioPath: 'audio/demo10.mp3',
       imgPath: 'img/10.jpg',
-      shaderPath: 'shaders/d3.frag',
+      shaderPath: 'shaders/d1.frag',
     },
     {
       artist: 'Dxginger',
@@ -99,6 +100,35 @@ const s = (p) => {
     }
   ];
 
+  // --- Code & Logic Component: Shader Settings Object ---
+  // This object holds all the parameters that can be fine-tuned in the debug panel.
+  const shaderSettings = {
+    'overlay.frag': {
+      grainIntensity: { value: 0.15, min: 0, max: 0.5, step: 0.01 },
+      grainSize: { value: 200.0, min: 50.0, max: 1000.0, step: 1.0 },
+      leakStrength: { value: 0.15, min: 0, max: 1.0, step: 0.01 },
+      leakRed: { value: 0.9, min: 0.0, max: 1.0, step: 0.01 },
+      leakGreen: { value: 0.2, min: 0.0, max: 1.0, step: 0.01 },
+      leakBlue: { value: 0.15, min: 0.0, max: 1.0, step: 0.01 }
+    },
+    'pixelation.frag': {
+      baseSize: { value: 20.0, min: 1.0, max: 400.0, step: 1.0 },
+      bassResponse: { value: 180.0, min: 0.0, max: 500.0, step: 1.0 }
+    },
+    'noise.frag': {
+      midResponse: { value: 0.4, min: 0.0, max: 1.0, step: 0.01 }
+    },
+    'displacement.frag': {
+       midResponse: { value: 0.4, min: 0.0, max: 1.0, step: 0.01 }
+    },
+    'd1.frag': {
+        bassFrequency: { value: 12.0, min: 1.0, max: 50.0, step: 0.1 },
+        midAmplitude: { value: 0.05, min: 0.0, max: 0.5, step: 0.001 }
+    }
+    // Add other original shaders here if you want to control them
+  };
+
+
   // --- Code & Logic Component: `preload()` function ---
   // This runs before setup() to load the initial assets for the first track.
   p.preload = () => {
@@ -109,6 +139,8 @@ const s = (p) => {
     if (track.displacementMapPath) {
         displacementMap = p.loadImage(track.displacementMapPath);
     }
+    overlayShader = p.loadShader('shaders/base.vert', 'shaders/overlay.frag');
+    backgroundNoise = p.loadSound('audio/background-noise.mp3');
   };
 
   // --- UI Component: Tracklist Panel ---
@@ -162,6 +194,7 @@ const s = (p) => {
     const onAssetsLoaded = () => {
         p.loadSound(track.audioPath, loadedSound => {
           audio = loadedSound;
+          fft.setInput(audio); // Re-connect FFT to the new track
           const volumeSlider = document.getElementById('volume-slider');
           audio.setVolume(parseFloat(volumeSlider.value));
           updateTrackInfo();
@@ -190,8 +223,7 @@ const s = (p) => {
 
     p.loadShader('shaders/base.vert', track.shaderPath, loadedShader => {
       demo1Shader = loadedShader;
-      p.shader(demo1Shader);
-      assetLoaded();
+      assetLoaded(); 
     });
 
     if (track.displacementMapPath) {
@@ -200,7 +232,7 @@ const s = (p) => {
             assetLoaded();
         });
     } else {
-        displacementMap = null; // Clear map if not used
+        displacementMap = null;
         if(assetsToLoad > 2) assetLoaded();
     }
   }
@@ -236,34 +268,87 @@ const s = (p) => {
       }
   }
 
+  // --- Function to create the Secret Debug Panel ---
+  function createDebugPanel() {
+      const container = document.getElementById('shader-controls-container');
+      container.innerHTML = ''; // Clear previous controls
+      
+      for (const shaderName in shaderSettings) {
+          const details = document.createElement('details');
+          const summary = document.createElement('summary');
+          summary.textContent = shaderName;
+          details.appendChild(summary);
+
+          const content = document.createElement('div');
+          content.classList.add('shader-controls-content');
+
+          const params = shaderSettings[shaderName];
+          for (const paramName in params) {
+              const setting = params[paramName];
+              const row = document.createElement('div');
+              row.classList.add('control-row');
+              
+              const label = document.createElement('label');
+              label.textContent = paramName;
+              
+              const slider = document.createElement('input');
+              slider.type = 'range';
+              slider.min = setting.min;
+              slider.max = setting.max;
+              slider.step = setting.step;
+              slider.value = setting.value;
+
+              const valueSpan = document.createElement('span');
+              valueSpan.textContent = setting.value.toFixed(2);
+
+              slider.addEventListener('input', (e) => {
+                  const newValue = parseFloat(e.target.value);
+                  setting.value = newValue;
+                  valueSpan.textContent = newValue.toFixed(2);
+              });
+
+              row.appendChild(label);
+              row.appendChild(slider);
+              row.appendChild(valueSpan);
+              content.appendChild(row);
+          }
+
+          details.appendChild(content);
+          container.appendChild(details);
+      }
+  }
+
   // --- Code & Logic Component: `setup()` function ---
   // This runs once to initialize the canvas, event listeners, and UI components.
   p.setup = () => {
       populateTracklist();
       updateTrackInfo();
+      createDebugPanel(); // Create the debug panel on startup
       
-      // Event listener for the main "Play" button on the Action Screen
       const playBtn = document.querySelector('#play-btn');
       playBtn.addEventListener('click', () => {
         document.body.classList.add('start-anim');
         togglePlayPause();
         
-        // This class signals that the Intro Animation is over and the main view is active
+        // Start background noise on first interaction
+        if (backgroundNoise && !backgroundNoise.isPlaying()) {
+            backgroundNoise.loop();
+            backgroundNoise.setVolume(0.1); // Increased background noise volume
+        }
+        
         const animTimeTotal = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--anim-time-total').replace('s', '')) * 1000;
         setTimeout(() => {
             document.body.classList.add('main-view-active');
             resetToggleIdleTimer(); 
         }, animTimeTotal);
-
       });
 
       p.pixelDensity(1);
-      // Main Visualizer is created here and attached to the #content div
       const canvas = p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
       canvas.parent('content'); 
-      p.shader(demo1Shader);
       
-      // --- Player Controls Event Listeners ---
+      offscreenBuffer = p.createGraphics(p.windowWidth, p.windowHeight, p.WEBGL);
+      
       document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
       document.getElementById('toggle-btn').addEventListener('click', toggleMute);
       document.getElementById('next-btn').addEventListener('click', () => {
@@ -296,7 +381,6 @@ const s = (p) => {
           }
       });
       
-      // --- "About Album" Modal Listeners ---
       const aboutBtn = document.getElementById('about-btn');
       const aboutModal = document.getElementById('about-modal');
       const closeModalBtn = aboutModal.querySelector('.modal-close');
@@ -306,13 +390,11 @@ const s = (p) => {
       closeModalBtn.addEventListener('click', () => aboutModal.classList.remove('visible'));
       modalOverlay.addEventListener('click', () => aboutModal.classList.remove('visible'));
 
-      // --- UI Interaction Logic for Hover Panels ---
       const playerWrapper = document.querySelector('.player-container');
       const tracklistWrapper = document.querySelector('.tracklist-wrapper');
       const playerToggle = document.querySelector('.player-toggle');
       const tracklistToggle = document.querySelector('.tracklist-toggle');
 
-      // --- Idle timer for Player/Tracklist Toggles ---
       const resetToggleIdleTimer = () => {
         clearTimeout(toggleIdleTimer);
         playerToggle.classList.remove('idle-fade');
@@ -323,12 +405,10 @@ const s = (p) => {
         }, 3000); 
       };
       
-      // Only start the idle timer once the main view is active
       if(document.body.classList.contains('main-view-active')){
         window.addEventListener('mousemove', resetToggleIdleTimer);
       }
       
-      // --- Auto-hide timer for open panels ---
       const startPanelIdleTimer = () => {
           clearTimeout(panelIdleTimer);
           panelIdleTimer = setTimeout(() => {
@@ -337,7 +417,6 @@ const s = (p) => {
           }, 8000); 
       };
       
-      // --- Player Controls Hover Logic ---
       playerWrapper.addEventListener('mouseenter', () => {
           playerWrapper.classList.add('is-active');
           startPanelIdleTimer();
@@ -347,7 +426,6 @@ const s = (p) => {
           clearTimeout(panelIdleTimer);
       });
 
-      // --- Tracklist Panel Hover Logic ---
       tracklistWrapper.addEventListener('mouseenter', () => {
           tracklistWrapper.classList.add('is-active');
           startPanelIdleTimer();
@@ -357,74 +435,104 @@ const s = (p) => {
           clearTimeout(panelIdleTimer);
       });
 
-      // Reset panel auto-hide timer on any mouse move if a panel is active
       window.addEventListener('mousemove', () => {
           if (playerWrapper.classList.contains('is-active') || tracklistWrapper.classList.contains('is-active')) {
               startPanelIdleTimer();
           }
       });
 
-      // Initialize the Fast Fourier Transform for audio analysis
+      const trackInfo = document.querySelector('.track-info');
+      const title = document.querySelector('.track-info__title');
+      const artist = document.querySelector('.track-info__artist');
+      window.addEventListener('mousemove', (e) => {
+        const mouseX = e.clientX;
+        const mouseY = e.clientY;
+        const percentX = (mouseX / window.innerWidth - 0.5) * 2;
+        const percentY = (mouseY / window.innerHeight - 0.5) * 2;
+        
+        // Reduced parallax magnitude
+        title.style.transform = `translate(${percentX * -8}px, ${percentY * -8}px)`;
+        artist.style.transform = `translate(${percentX * 4}px, ${percentY * 4}px)`;
+      });
+
       fft = new p5.FFT();
+      fft.setInput(audio); // Connect FFT to the initial audio track
   };
+  
+  // --- Keyboard listener for debug panel ---
+  p.keyPressed = () => {
+    if (p.key === 'd' || p.key === 'D') {
+      document.getElementById('debug-panel').classList.toggle('visible');
+    }
+  }
 
   // --- Code & Logic Component: `draw()` Loop ---
   // This function runs continuously (60fps) to create the animation.
   p.draw = () => {
-    if (!demo1Shader || !img || img.width === 0) return;
+    if (!demo1Shader || !img || img.width === 0 || !overlayShader) return;
 
-    p.shader(demo1Shader);
     fft.analyze();
-
-    // Get real-time audio frequency data
     const bass = fft.getEnergy("bass");
     const treble = fft.getEnergy("treble");
     const mid = fft.getEnergy("mid");
 
-    let mapBass, mapTremble, mapMid;
-    const currentShader = album[currentTrackIndex].shaderPath;
+    const mapBass = p.map(bass, 0, 255, 0.0, 1.0);
+    const mapMid = p.map(mid, 0, 255, 0.0, 1.0);
 
-    // --- Code & Logic Component: Shader-Specific Settings Block ---
-    // Apply specific audio mappings based on the active shader for tailored effects.
-    if (currentShader === 'shaders/pixelation.frag') {
-        mapBass = p.map(bass, 0, 255, 20.0, 200.0);
-        mapTremble = p.map(treble, 0, 255, 0, 0.0);
-        mapMid = p.map(mid, 0, 255, 0.0, 0.1);
-    } else if (currentShader === 'shaders/noise.frag' || currentShader === 'shaders/displacement.frag') {
-        mapBass = p.map(bass, 0, 255, 10, 15.0);
-        mapTremble = p.map(treble, 0, 255, 0, 0.0);
-        mapMid = p.map(mid, 0, 255, 0.0, 0.4);
-    } else {
-        // Default settings for original shaders
-        mapBass = p.map(bass, 0, 255, 10, 15.0);
-        mapTremble = p.map(treble, 0, 255, 0, 0.0);
-        mapMid = p.map(mid, 0, 255, 0.0, 0.1);
-    }
+    // --- Pass 1: Render the unique distortion effect to the off-screen buffer ---
+    offscreenBuffer.shader(demo1Shader);
     
-    // --- Code & Logic Component: Shader Uniforms ---
-    // These variables are sent from JavaScript to the GLSL shader every frame.
+    // Set base uniforms for the track-specific shader
     demo1Shader.setUniform('u_resolution', [p.windowWidth, p.windowHeight]);
     demo1Shader.setUniform('u_texture', img);
     demo1Shader.setUniform('u_tResolution', [img.width, img.height]);
     demo1Shader.setUniform('u_time', p.frameCount / 20);
+    
+    // Pass raw mapped audio values
     demo1Shader.setUniform('u_bass', mapBass);
-    demo1Shader.setUniform('u_tremble', mapTremble);
     demo1Shader.setUniform('u_mid', mapMid);
 
     if (displacementMap) {
         demo1Shader.setUniform('u_displacementMap', displacementMap);
     }
+    
+    // Pass custom parameters from the debug panel
+    const currentShaderName = album[currentTrackIndex].shaderPath.split('/').pop();
+    if (shaderSettings[currentShaderName]) {
+      for (const paramName in shaderSettings[currentShaderName]) {
+        demo1Shader.setUniform(`u_${paramName}`, shaderSettings[currentShaderName][paramName].value);
+      }
+    }
 
-    // This rectangle covers the whole screen, applying the shader to every pixel.
-    p.rect(0,0, p.width, p.height);
+    offscreenBuffer.rect(0, 0, p.width, p.height);
+
+
+    // --- Pass 2: Render the buffer to the main canvas with the overlay shader ---
+    p.shader(overlayShader);
+    
+    let mouseX = p.map(p.mouseX, 0, p.width, 0, 1.0);
+    let mouseY = p.map(p.mouseY, 0, p.height, 0, 1.0);
+
+    // Set uniforms for the global overlay shader
+    overlayShader.setUniform('u_mainTexture', offscreenBuffer);
+    overlayShader.setUniform('u_resolution', [p.windowWidth, p.windowHeight]);
+    overlayShader.setUniform('u_time', p.frameCount / 60);
+    overlayShader.setUniform('u_mouse', [mouseX, mouseY]);
+
+    // Pass custom overlay parameters from the debug panel
+    if (shaderSettings['overlay.frag']) {
+      for (const paramName in shaderSettings['overlay.frag']) {
+        overlayShader.setUniform(`u_${paramName}`, shaderSettings['overlay.frag'][paramName].value);
+      }
+    }
+
+    p.rect(0, 0, p.width, p.height);
   };
 
   // Handles window resizing to keep the visualizer full-screen
   p.windowResized = () => {
     p.resizeCanvas(p.windowWidth, p.windowHeight);
-    if(demo1Shader) {
-        demo1Shader.setUniform('u_resolution', [p.windowWidth, p.windowHeight]);
-    }
+    offscreenBuffer.resizeCanvas(p.windowWidth, p.windowHeight);
   };
 };
 

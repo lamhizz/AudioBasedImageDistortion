@@ -102,7 +102,7 @@ const s = (p) => {
 
   // --- Code & Logic Component: Shader Settings Object ---
   // This object holds all the parameters that can be fine-tuned in the debug panel.
-  const shaderSettings = {
+  let shaderSettings = {
     'overlay.frag': {
       grainIntensity: { value: 0.15, min: 0, max: 0.5, step: 0.01 },
       grainSize: { value: 200.0, min: 50.0, max: 1000.0, step: 1.0 },
@@ -116,21 +116,72 @@ const s = (p) => {
       bassResponse: { value: 180.0, min: 0.0, max: 500.0, step: 1.0 }
     },
     'noise.frag': {
-      midResponse: { value: 0.4, min: 0.0, max: 1.0, step: 0.01 }
+      noiseAmount: { value: 0.2, min: 0.0, max: 1.0, step: 0.01 }
     },
     'displacement.frag': {
-       midResponse: { value: 0.4, min: 0.0, max: 1.0, step: 0.01 }
+       displacementAmount: { value: 0.2, min: 0.0, max: 1.0, step: 0.01 }
     },
     'd1.frag': {
-        bassFrequency: { value: 12.0, min: 1.0, max: 50.0, step: 0.1 },
-        midAmplitude: { value: 0.05, min: 0.0, max: 0.5, step: 0.001 }
+        waveFrequency: { value: 12.0, min: 1.0, max: 50.0, step: 0.1 },
+        waveAmplitude: { value: 0.05, min: 0.0, max: 0.5, step: 0.001 }
+    },
+    'd2.frag': {
+        displacementAmount: { value: 1.0, min: 0.0, max: 5.0, step: 0.01 },
+        scaleAmount: { value: 2.0, min: 0.5, max: 5.0, step: 0.01 },
+    },
+    'd3.frag': {
+        aberrationAmount: { value: 1.0, min: 0.0, max: 5.0, step: 0.01 },
+    },
+    'd4.frag': {
+        displacementAmount: { value: 1.0, min: 0.0, max: 5.0, step: 0.01 },
+    },
+    'd5.frag': {
+        waveFrequency: { value: 15.0, min: 1.0, max: 50.0, step: 0.1 },
+        waveAmplitude: { value: 0.1, min: 0.0, max: 0.5, step: 0.001 },
+        stretchX: { value: 1.9, min: 0.0, max: 5.0, step: 0.01 },
+        stretchY: { value: 1.5, min: 0.0, max: 5.0, step: 0.01 }
+    },
+     'd6.frag': {
+        waveFrequency: { value: 20.0, min: 1.0, max: 50.0, step: 0.1 },
+        waveAmplitude: { value: 0.1, min: 0.0, max: 0.5, step: 0.001 }
+    },
+     'd8.frag': {
+        waveFrequency: { value: 25.0, min: 1.0, max: 50.0, step: 0.1 },
+        waveAmplitude: { value: 0.1, min: 0.0, max: 0.5, step: 0.001 }
     }
-    // Add other original shaders here if you want to control them
   };
 
+  const SETTINGS_KEY = 'shaderSettings_InsomniaAlbum';
+
+  // --- Settings Persistence Functions ---
+  function saveSettings() {
+      const settingsToSave = {};
+      for (const shader in shaderSettings) {
+          settingsToSave[shader] = {};
+          for (const param in shaderSettings[shader]) {
+              settingsToSave[shader][param] = { value: shaderSettings[shader][param].value };
+          }
+      }
+      localStorage.setItem(SETTINGS_KEY, JSON.stringify(settingsToSave));
+  }
+
+  function loadSettings() {
+      const saved = localStorage.getItem(SETTINGS_KEY);
+      if (saved) {
+          const loadedSettings = JSON.parse(saved);
+          for (const shader in loadedSettings) {
+              if (shaderSettings[shader]) {
+                  for (const param in loadedSettings[shader]) {
+                      if (shaderSettings[shader][param]) {
+                          shaderSettings[shader][param].value = loadedSettings[shader][param].value;
+                      }
+                  }
+              }
+          }
+      }
+  }
 
   // --- Code & Logic Component: `preload()` function ---
-  // This runs before setup() to load the initial assets for the first track.
   p.preload = () => {
     const track = album[0];
     audio = p.loadSound(track.audioPath);
@@ -144,7 +195,6 @@ const s = (p) => {
   };
 
   // --- UI Component: Tracklist Panel ---
-  // This function builds the HTML for the tracklist panel from the `album` array.
   function populateTracklist() {
     const tracklistEl = document.getElementById('tracklist');
     tracklistEl.innerHTML = '';
@@ -163,7 +213,6 @@ const s = (p) => {
   }
 
   // --- UI Component: Track Info Display ---
-  // This function updates the centrally displayed track title and artist.
   function updateTrackInfo() {
       document.getElementById('track-artist').textContent = `Now Playing`;
       document.getElementById('track-title').textContent = album[currentTrackIndex].title;
@@ -180,21 +229,17 @@ const s = (p) => {
   }
   
   // --- Code & Logic Component: `playTrack()` function ---
-  // Handles stopping the old track and loading all new assets for the selected track.
   function playTrack(index) {
     if (index < 0 || index >= album.length) return;
-    
     if (audio && audio.isPlaying()) {
       audio.stop();
     }
-    
     currentTrackIndex = index;
     const track = album[currentTrackIndex];
-    
     const onAssetsLoaded = () => {
         p.loadSound(track.audioPath, loadedSound => {
           audio = loadedSound;
-          fft.setInput(audio); // Re-connect FFT to the new track
+          fft.setInput(audio);
           const volumeSlider = document.getElementById('volume-slider');
           audio.setVolume(parseFloat(volumeSlider.value));
           updateTrackInfo();
@@ -205,27 +250,22 @@ const s = (p) => {
           }
         });
     };
-
-    let assetsToLoad = 2; // shader, image
+    let assetsToLoad = 2;
     if (track.displacementMapPath) assetsToLoad++;
-
     const assetLoaded = () => {
         assetsToLoad--;
         if (assetsToLoad === 0) {
             onAssetsLoaded();
         }
     };
-
     p.loadImage(track.imgPath, loadedImg => {
       img = loadedImg;
       assetLoaded();
     });
-
     p.loadShader('shaders/base.vert', track.shaderPath, loadedShader => {
       demo1Shader = loadedShader;
       assetLoaded(); 
     });
-
     if (track.displacementMapPath) {
         p.loadImage(track.displacementMapPath, loadedMap => {
             displacementMap = loadedMap;
@@ -271,71 +311,59 @@ const s = (p) => {
   // --- Function to create the Secret Debug Panel ---
   function createDebugPanel() {
       const container = document.getElementById('shader-controls-container');
-      container.innerHTML = ''; // Clear previous controls
-      
+      container.innerHTML = '';
       for (const shaderName in shaderSettings) {
           const details = document.createElement('details');
           const summary = document.createElement('summary');
           summary.textContent = shaderName;
           details.appendChild(summary);
-
           const content = document.createElement('div');
           content.classList.add('shader-controls-content');
-
           const params = shaderSettings[shaderName];
           for (const paramName in params) {
               const setting = params[paramName];
               const row = document.createElement('div');
               row.classList.add('control-row');
-              
               const label = document.createElement('label');
               label.textContent = paramName;
-              
               const slider = document.createElement('input');
               slider.type = 'range';
               slider.min = setting.min;
               slider.max = setting.max;
               slider.step = setting.step;
               slider.value = setting.value;
-
               const valueSpan = document.createElement('span');
               valueSpan.textContent = setting.value.toFixed(2);
-
               slider.addEventListener('input', (e) => {
                   const newValue = parseFloat(e.target.value);
                   setting.value = newValue;
                   valueSpan.textContent = newValue.toFixed(2);
+                  saveSettings(); // Save on change
               });
-
               row.appendChild(label);
               row.appendChild(slider);
               row.appendChild(valueSpan);
               content.appendChild(row);
           }
-
           details.appendChild(content);
           container.appendChild(details);
       }
   }
 
   // --- Code & Logic Component: `setup()` function ---
-  // This runs once to initialize the canvas, event listeners, and UI components.
   p.setup = () => {
+      loadSettings(); // Load settings from localStorage on start
       populateTracklist();
       updateTrackInfo();
-      createDebugPanel(); // Create the debug panel on startup
-      
+      createDebugPanel();
       const playBtn = document.querySelector('#play-btn');
       playBtn.addEventListener('click', () => {
         document.body.classList.add('start-anim');
         togglePlayPause();
-        
-        // Start background noise on first interaction
         if (backgroundNoise && !backgroundNoise.isPlaying()) {
             backgroundNoise.loop();
-            backgroundNoise.setVolume(0.1); // Increased background noise volume
+            backgroundNoise.setVolume(0.1);
         }
-        
         const animTimeTotal = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--anim-time-total').replace('s', '')) * 1000;
         setTimeout(() => {
             document.body.classList.add('main-view-active');
@@ -346,9 +374,7 @@ const s = (p) => {
       p.pixelDensity(1);
       const canvas = p.createCanvas(p.windowWidth, p.windowHeight, p.WEBGL);
       canvas.parent('content'); 
-      
       offscreenBuffer = p.createGraphics(p.windowWidth, p.windowHeight, p.WEBGL);
-      
       document.getElementById('play-pause-btn').addEventListener('click', togglePlayPause);
       document.getElementById('toggle-btn').addEventListener('click', toggleMute);
       document.getElementById('next-btn').addEventListener('click', () => {
@@ -368,7 +394,6 @@ const s = (p) => {
           muteIcon.textContent = newVolume > 0 ? 'volume_up' : 'volume_off';
         }
       });
-      
       const fullscreenBtn = document.getElementById('fullscreen-btn');
       fullscreenBtn.addEventListener('click', () => {
           const fsIcon = fullscreenBtn.querySelector('.material-symbols-outlined');
@@ -380,7 +405,6 @@ const s = (p) => {
             fsIcon.textContent = 'fullscreen';
           }
       });
-      
       const aboutBtn = document.getElementById('about-btn');
       const aboutModal = document.getElementById('about-modal');
       const closeModalBtn = aboutModal.querySelector('.modal-close');
@@ -389,6 +413,48 @@ const s = (p) => {
       aboutBtn.addEventListener('click', () => aboutModal.classList.add('visible'));
       closeModalBtn.addEventListener('click', () => aboutModal.classList.remove('visible'));
       modalOverlay.addEventListener('click', () => aboutModal.classList.remove('visible'));
+
+      // --- Export/Import Settings Logic ---
+      document.getElementById('export-settings-btn').addEventListener('click', () => {
+          const settingsString = JSON.stringify(shaderSettings, (key, value) => {
+              if (key !== 'min' && key !== 'max' && key !== 'step') return value;
+          }, 2);
+          const blob = new Blob([settingsString], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = 'shader_settings.json';
+          a.click();
+          URL.revokeObjectURL(url);
+      });
+
+      const importInput = document.getElementById('import-settings-input');
+      importInput.addEventListener('change', (event) => {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = (e) => {
+              try {
+                  const importedSettings = JSON.parse(e.target.result);
+                  // Update current settings with imported values
+                  for (const shader in importedSettings) {
+                      if (shaderSettings[shader]) {
+                          for (const param in importedSettings[shader]) {
+                              if (shaderSettings[shader][param]) {
+                                  shaderSettings[shader][param].value = importedSettings[shader][param].value;
+                              }
+                          }
+                      }
+                  }
+                  saveSettings(); // Save imported settings to localStorage
+                  createDebugPanel(); // Rebuild panel to show new values
+              } catch (error) {
+                  console.error("Error parsing settings file:", error);
+                  alert("Could not import settings. Please check the file format.");
+              }
+          };
+          reader.readAsText(file);
+      });
 
       const playerWrapper = document.querySelector('.player-container');
       const tracklistWrapper = document.querySelector('.tracklist-wrapper');
@@ -404,11 +470,9 @@ const s = (p) => {
           tracklistToggle.classList.add('idle-fade');
         }, 3000); 
       };
-      
       if(document.body.classList.contains('main-view-active')){
         window.addEventListener('mousemove', resetToggleIdleTimer);
       }
-      
       const startPanelIdleTimer = () => {
           clearTimeout(panelIdleTimer);
           panelIdleTimer = setTimeout(() => {
@@ -416,7 +480,6 @@ const s = (p) => {
               tracklistWrapper.classList.remove('is-active');
           }, 8000); 
       };
-      
       playerWrapper.addEventListener('mouseenter', () => {
           playerWrapper.classList.add('is-active');
           startPanelIdleTimer();
@@ -425,7 +488,6 @@ const s = (p) => {
           playerWrapper.classList.remove('is-active');
           clearTimeout(panelIdleTimer);
       });
-
       tracklistWrapper.addEventListener('mouseenter', () => {
           tracklistWrapper.classList.add('is-active');
           startPanelIdleTimer();
@@ -434,13 +496,11 @@ const s = (p) => {
           tracklistWrapper.classList.remove('is-active');
           clearTimeout(panelIdleTimer);
       });
-
       window.addEventListener('mousemove', () => {
           if (playerWrapper.classList.contains('is-active') || tracklistWrapper.classList.contains('is-active')) {
               startPanelIdleTimer();
           }
       });
-
       const trackInfo = document.querySelector('.track-info');
       const title = document.querySelector('.track-info__title');
       const artist = document.querySelector('.track-info__artist');
@@ -449,93 +509,64 @@ const s = (p) => {
         const mouseY = e.clientY;
         const percentX = (mouseX / window.innerWidth - 0.5) * 2;
         const percentY = (mouseY / window.innerHeight - 0.5) * 2;
-        
-        // Reduced parallax magnitude
         title.style.transform = `translate(${percentX * -8}px, ${percentY * -8}px)`;
         artist.style.transform = `translate(${percentX * 4}px, ${percentY * 4}px)`;
       });
-
       fft = new p5.FFT();
-      fft.setInput(audio); // Connect FFT to the initial audio track
+      fft.setInput(audio);
   };
   
-  // --- Keyboard listener for debug panel ---
   p.keyPressed = () => {
     if (p.key === 'd' || p.key === 'D') {
       document.getElementById('debug-panel').classList.toggle('visible');
     }
   }
 
-  // --- Code & Logic Component: `draw()` Loop ---
-  // This function runs continuously (60fps) to create the animation.
   p.draw = () => {
     if (!demo1Shader || !img || img.width === 0 || !overlayShader) return;
-
     fft.analyze();
     const bass = fft.getEnergy("bass");
     const treble = fft.getEnergy("treble");
     const mid = fft.getEnergy("mid");
-
     const mapBass = p.map(bass, 0, 255, 0.0, 1.0);
     const mapMid = p.map(mid, 0, 255, 0.0, 1.0);
-
-    // --- Pass 1: Render the unique distortion effect to the off-screen buffer ---
     offscreenBuffer.shader(demo1Shader);
-    
-    // Set base uniforms for the track-specific shader
     demo1Shader.setUniform('u_resolution', [p.windowWidth, p.windowHeight]);
     demo1Shader.setUniform('u_texture', img);
     demo1Shader.setUniform('u_tResolution', [img.width, img.height]);
     demo1Shader.setUniform('u_time', p.frameCount / 20);
-    
-    // Pass raw mapped audio values
     demo1Shader.setUniform('u_bass', mapBass);
     demo1Shader.setUniform('u_mid', mapMid);
-
     if (displacementMap) {
         demo1Shader.setUniform('u_displacementMap', displacementMap);
     }
-    
-    // Pass custom parameters from the debug panel
     const currentShaderName = album[currentTrackIndex].shaderPath.split('/').pop();
     if (shaderSettings[currentShaderName]) {
       for (const paramName in shaderSettings[currentShaderName]) {
         demo1Shader.setUniform(`u_${paramName}`, shaderSettings[currentShaderName][paramName].value);
       }
     }
-
     offscreenBuffer.rect(0, 0, p.width, p.height);
-
-
-    // --- Pass 2: Render the buffer to the main canvas with the overlay shader ---
     p.shader(overlayShader);
-    
     let mouseX = p.map(p.mouseX, 0, p.width, 0, 1.0);
     let mouseY = p.map(p.mouseY, 0, p.height, 0, 1.0);
-
-    // Set uniforms for the global overlay shader
     overlayShader.setUniform('u_mainTexture', offscreenBuffer);
     overlayShader.setUniform('u_resolution', [p.windowWidth, p.windowHeight]);
     overlayShader.setUniform('u_time', p.frameCount / 60);
     overlayShader.setUniform('u_mouse', [mouseX, mouseY]);
-
-    // Pass custom overlay parameters from the debug panel
     if (shaderSettings['overlay.frag']) {
       for (const paramName in shaderSettings['overlay.frag']) {
         overlayShader.setUniform(`u_${paramName}`, shaderSettings['overlay.frag'][paramName].value);
       }
     }
-
     p.rect(0, 0, p.width, p.height);
   };
 
-  // Handles window resizing to keep the visualizer full-screen
   p.windowResized = () => {
     p.resizeCanvas(p.windowWidth, p.windowHeight);
     offscreenBuffer.resizeCanvas(p.windowWidth, p.windowHeight);
   };
 };
 
-// Initialize the p5.js sketch to start the application
 new p5(s);
 

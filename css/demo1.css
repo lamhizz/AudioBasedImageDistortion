@@ -84,7 +84,10 @@ body {
 	display: flex;
 	justify-content: center;
 	align-items: center;
-	background: rgba(0, 0, 0, 0.7);
+	background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
 	padding: 0.5rem 0;
 	transform: translateY(100%);
 	transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
@@ -104,7 +107,10 @@ body {
 }
 
 .main-view-active .player-toggle {
-	opacity: 1;
+  left: 0px;
+  right: 0px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .player-toggle:hover + .player-container,
@@ -165,8 +171,10 @@ body {
 	right: 0;
 	height: 100%;
 	width: 350px;
-	background: rgba(0, 0, 0, 0.8);
-	backdrop-filter: blur(10px);
+	background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
 	transform: translateX(100%);
 	transition: transform 0.4s cubic-bezier(0.25, 0.46, 0.45, 0.94);
 	z-index: 1400;
@@ -278,7 +286,10 @@ body {
 }
 .modal-content {
 	position: relative;
-	background: rgba(10,10,10,0.9);
+	background-color: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px) saturate(180%);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
 	padding: 2rem 3rem;
 	border-radius: 8px;
 	max-width: 500px;
@@ -428,3 +439,12 @@ body {
 	background: #444;
 }
 
+h2 {
+  font-family: "Segoe UI", Arial, sans-serif;
+  line-height: 1.4em;
+}
+
+p {
+  font-family: "Segoe UI", Arial, sans-serif;
+  line-height: 1.6em;
+}

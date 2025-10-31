@@ -210,14 +210,24 @@ body {
 	color: #fff;
 }
 .track-item {
-	padding: 0.75rem 0;
+	display: flex;
+	align-items: center;
+	padding: 0.5rem 0;
 	cursor: pointer;
-	font-size: 1.1rem;
+	font-size: 1rem;
 	text-transform: uppercase;
 	letter-spacing: 1px;
 	color: #aaa;
-	transition: color 0.3s ease, transform 0.3s ease;
-	transform-origin: left center;
+	transition: color 0.3s ease, background-color 0.3s ease;
+	border-radius: 4px;
+}
+
+.track-thumbnail {
+	width: 40px;
+	height: 40px;
+	margin-right: 1rem;
+	object-fit: cover;
+	border-radius: 4px;
 }
 .track-item:hover {
 	color: #fff;

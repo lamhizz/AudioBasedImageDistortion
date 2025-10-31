@@ -1,0 +1,48 @@
+{
+  "overlay.frag": {
+    "grainIntensity": { "value": 0.15, "min": 0, "max": 0.5, "step": 0.01 },
+    "grainSize": { "value": 200.0, "min": 50.0, "max": 1000.0, "step": 1.0 },
+    "leakStrength": { "value": 0.15, "min": 0, "max": 1.0, "step": 0.01 },
+    "leakRed": { "value": 0.9, "min": 0.0, "max": 1.0, "step": 0.01 },
+    "leakGreen": { "value": 0.2, "min": 0.0, "max": 1.0, "step": 0.01 },
+    "leakBlue": { "value": 0.15, "min": 0.0, "max": 1.0, "step": 0.01 }
+  },
+  "pixelation.frag": {
+    "baseSize": { "value": 20.0, "min": 1.0, "max": 400.0, "step": 1.0 },
+    "bassResponse": { "value": 180.0, "min": 0.0, "max": 500.0, "step": 1.0 }
+  },
+  "noise.frag": {
+    "noiseAmount": { "value": 0.2, "min": 0.0, "max": 1.0, "step": 0.01 }
+  },
+  "displacement.frag": {
+    "displacementAmount": { "value": 0.2, "min": 0.0, "max": 1.0, "step": 0.01 }
+  },
+  "d1.frag": {
+    "waveFrequency": { "value": 12.0, "min": 1.0, "max": 50.0, "step": 0.1 },
+    "waveAmplitude": { "value": 0.05, "min": 0.0, "max": 0.5, "step": 0.001 }
+  },
+  "d2.frag": {
+    "displacementAmount": { "value": 1.0, "min": 0.0, "max": 5.0, "step": 0.01 },
+    "scaleAmount": { "value": 2.0, "min": 0.5, "max": 5.0, "step": 0.01 }
+  },
+  "d3.frag": {
+    "aberrationAmount": { "value": 1.0, "min": 0.0, "max": 5.0, "step": 0.01 }
+  },
+  "d4.frag": {
+    "displacementAmount": { "value": 1.0, "min": 0.0, "max": 5.0, "step": 0.01 }
+  },
+  "d5.frag": {
+    "waveFrequency": { "value": 15.0, "min": 1.0, "max": 50.0, "step": 0.1 },
+    "waveAmplitude": { "value": 0.1, "min": 0.0, "max": 0.5, "step": 0.001 },
+    "stretchX": { "value": 1.9, "min": 0.0, "max": 5.0, "step": 0.01 },
+    "stretchY": { "value": 1.5, "min": 0.0, "max": 5.0, "step": 0.01 }
+  },
+  "d6.frag": {
+    "waveFrequency": { "value": 20.0, "min": 1.0, "max": 50.0, "step": 0.1 },
+    "waveAmplitude": { "value": 0.1, "min": 0.0, "max": 0.5, "step": 0.001 }
+  },
+  "d8.frag": {
+    "waveFrequency": { "value": 25.0, "min": 1.0, "max": 50.0, "step": 0.1 },
+    "waveAmplitude": { "value": 0.1, "min": 0.0, "max": 0.5, "step": 0.001 }
+  }
+}

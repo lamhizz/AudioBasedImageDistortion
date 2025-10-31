@@ -1,0 +1,87 @@
+[
+  {
+    "artist": "Dxginger",
+    "title": "Blue Hour Static",
+    "audioPath": "audio/demo1.mp3",
+    "imgPath": "img/1.jpg",
+    "shaderPath": "shaders/d1.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "The Quiet Hum",
+    "audioPath": "audio/demo2.mp3",
+    "imgPath": "img/2.jpg",
+    "shaderPath": "shaders/d3.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "4 AM Echo",
+    "audioPath": "audio/demo3.mp3",
+    "imgPath": "img/3.jpg",
+    "shaderPath": "shaders/displacement.frag",
+    "displacementMapPath": "img/ripple.jpg"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Weightless Drift",
+    "audioPath": "audio/demo4.mp3",
+    "imgPath": "img/4.jpg",
+    "shaderPath": "shaders/d3.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Phantom Vibration",
+    "audioPath": "audio/demo5.mp3",
+    "imgPath": "img/5.jpg",
+    "shaderPath": "shaders/d5.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Counting the Seconds",
+    "audioPath": "audio/demo6.mp3",
+    "imgPath": "img/6.jpg",
+    "shaderPath": "shaders/d6.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Synthetic Dawn",
+    "audioPath": "audio/demo7.mp3",
+    "imgPath": "img/7.jpg",
+    "shaderPath": "shaders/d8.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Silk & Silicone",
+    "audioPath": "audio/demo8.mp3",
+    "imgPath": "img/8.jpg",
+    "shaderPath": "shaders/d1.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Glimmering Loop",
+    "audioPath": "audio/demo9.mp3",
+    "imgPath": "img/9.jpg",
+    "shaderPath": "shaders/d3.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "The Unmade Bed",
+    "audioPath": "audio/demo10.mp3",
+    "imgPath": "img/10.jpg",
+    "shaderPath": "shaders/d1.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Subtle Decay",
+    "audioPath": "audio/demo11.mp3",
+    "imgPath": "img/11.jpg",
+    "shaderPath": "shaders/noise.frag"
+  },
+  {
+    "artist": "Dxginger",
+    "title": "Lucid Fade",
+    "audioPath": "audio/demo12.mp3",
+    "imgPath": "img/12.jpg",
+    "shaderPath": "shaders/d5.frag"
+  }
+]

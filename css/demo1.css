@@ -107,10 +107,8 @@ body {
 }
 
 .main-view-active .player-toggle {
-  left: 0px;
-  right: 0px;
-  margin-left: auto;
-  margin-right: auto;
+  bottom: 0px;
+  height: 24px;
 }
 
 .player-toggle:hover + .player-container,
@@ -197,6 +195,8 @@ body {
 }
 
 .main-view-active .tracklist-toggle {
+	right: 0px;
+    width: 23px;
 	opacity: 1;
 }
 
